@@ -7,7 +7,7 @@ function Cards() {
     const [cards,setCards] = useState ([]);
 
     useEffect(() => {
-        axios.get('http://localhost:3000/cards')
+        axios.get(`${import.meta.env.VITE_API_CARDS}`)
         .then ((response) => {
             setCards (response.data);
         })
@@ -22,7 +22,7 @@ function Cards() {
         <div className="flex gap-2 card-list ">
             {cards.map ((card) => (
                 <div key={card.id} className="border p-4 rounded shadow-md bg-white">
-                    <img src={`http://localhost:3000/cardsimg/${card.image_filename}`} alt={card.cardname} 
+                    <img src={`${import.meta.env.VITE_API_CARDS_IMAGE}${card.image_filename}`} alt={card.cardname} 
                     className="w-41 h-60 object-cover mx-auto"/>
 
                 </div>

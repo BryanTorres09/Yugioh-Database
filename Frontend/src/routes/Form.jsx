@@ -28,7 +28,7 @@ function Form() {
         formData.append("CardImage", cardImage);
 
         try {
-            const response = await axios.post("http://localhost:3000/upload", formData, {headers: {"Content-Type": "multipart/form-data"}});
+            const response = await axios.post(`${import.meta.env.VITE_API_UPLOAD_URL}`, formData, {headers: {"Content-Type": "multipart/form-data"}});
             alert("Card uploaded successfully!");
 
             // Reset form fields
