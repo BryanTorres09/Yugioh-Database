@@ -7,6 +7,7 @@ import path from 'path';
 import cors from 'cors';
 import { v2 as cloudinary } from "cloudinary";
 
+const app = express();
 
 // ✅ Correct CORS configuration
 app.use(cors({
@@ -16,7 +17,7 @@ app.use(cors({
 }));
 
 
-const app = express();
+
 const PORT = process.env.PORT || 3000;
 // app.use(cors());
 env.config();
