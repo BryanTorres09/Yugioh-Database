@@ -156,6 +156,10 @@ app.post(
       res.status(200).json("Card uploaded successfully");
     } catch (error) {
       console.error("Error uploading card:", error);
+      console.error(
+        "Full error:",
+        JSON.stringify(error, Object.getOwnPropertyNames(error))
+      );
       res.status(500).json("Error uploading card");
     }
   }
