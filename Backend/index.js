@@ -92,64 +92,73 @@ app.get ('/', (req, res) => {
 })
 
 // Upload Card Route
-app.post('/upload', upload.single('CardImage'), async (req, res) => {
-  const { CardName, Quantity, CardType, Attribute, Level } = req.body;
+app.post(
+  "/upload",
+  cors({
+    // add CORS again here just in case
+    origin: "https://yugioh-database-app.onrender.com",
+    methods: ["POST"],
+    credentials: true,
+  }),
+  upload.single("CardImage"),
+  async (req, res) => {
+    const { CardName, Quantity, CardType, Attribute, Level } = req.body;
 
-  const cardName = CardName;
-  const cardType = CardType?.trim();
-  const quantityNum = parseInt(Quantity, 10);
-  const levelNum = parseInt(Level, 10);
-  const attribute = Attribute?.trim() || "";
+    const cardName = CardName;
+    const cardType = CardType?.trim();
+    const quantityNum = parseInt(Quantity, 10);
+    const levelNum = parseInt(Level, 10);
+    const attribute = Attribute?.trim() || "";
 
-  if (!CardName || !req.file) {
-    return res
-      .status(400)
-      .send("Missing required fields: CardName or CardImage");
-  }
+    if (!CardName || !req.file) {
+      return res
+        .status(400)
+        .send("Missing required fields: CardName or CardImage");
+    }
 
-  // Upload buffer to Cloudinary
-  const cloudinaryUpload = () => {
-    return new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: "cards", public_id: CardName.replace(/\s+/g, "_") },
-        (err, result) => {
-          if (err) reject(err);
-          else resolve(result);
-        }
-      );
-      stream.end(req.file.buffer);
-    });
-  };
+    // Upload buffer to Cloudinary
+    const cloudinaryUpload = () => {
+      return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "cards", public_id: CardName.replace(/\s+/g, "_") },
+          (err, result) => {
+            if (err) reject(err);
+            else resolve(result);
+          }
+        );
+        stream.end(req.file.buffer);
+      });
+    };
 
-  const imageFilename = req.file.filename;
-  //const imageUrl = req.file.path; // For Cloudinary, this is the URL
+    const imageFilename = req.file.filename;
+    //const imageUrl = req.file.path; // For Cloudinary, this is the URL
 
-  try {
+    try {
+      const uploadResult = await cloudinaryUpload();
+      const imageUrl = uploadResult.secure_url;
 
-const uploadResult = await cloudinaryUpload();
-const imageUrl = uploadResult.secure_url;
-
-    const result = await db.query(
-      `INSERT INTO cards (cardname, quantity, cardtype, attribute, level, image_filename,image_url)
+      const result = await db.query(
+        `INSERT INTO cards (cardname, quantity, cardtype, attribute, level, image_filename,image_url)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *;`,
-      [
-        cardName,
-        quantityNum,
-        cardType,
-        attribute,
-        levelNum,
-        imageFilename,
-        imageUrl,
-      ]
-    );
-    const savedCard = result.rows[0];
-    res.status(200).json("Card uploaded successfully");
-  } catch (error) {
-    console.error("Error uploading card:", error);
-    res.status(500).json("Error uploading card");
+        [
+          cardName,
+          quantityNum,
+          cardType,
+          attribute,
+          levelNum,
+          imageFilename,
+          imageUrl,
+        ]
+      );
+      const savedCard = result.rows[0];
+      res.status(200).json("Card uploaded successfully");
+    } catch (error) {
+      console.error("Error uploading card:", error);
+      res.status(500).json("Error uploading card");
+    }
   }
-});
+);
 
 // Get All Cards Route
 app.get('/cards', async (req, res) => {
