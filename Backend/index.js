@@ -5,6 +5,8 @@ import axios from 'axios';
 import env from 'dotenv';
 import path from 'path';
 import cors from 'cors';
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 
 
 const app = express();
@@ -19,17 +21,37 @@ app.use(express.json());
 app.use("/cardsimg", express.static(path.join(process.cwd(), "cardsImages")));
 //app.use("./cardImages", express.static("cardsImages"));
 
-//Multer Storage Configuration
-const storage = multer.diskStorage ({
-    destination: (req, file, cb) => cb (null, './cardsImages/'),
-    filename: (req, file, cb) => {
-         const cardName = req.body.CardName?.replace(/\s+/g, "_"); // remove spaces
-         const ext = path.extname(file.originalname); // get file extension (.jpg, .png)
-         const finalName = `${cardName}${ext}`;
-         cb (null, finalName);
-    }
+
+// Cloudinary setup
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.CLOUD_API_KEY,
+  api_secret: process.env.CLOUD_API_SECRET,
 });
 
+
+
+
+//Multer Storage Configuration
+// const storage = multer.diskStorage ({
+//     destination: (req, file, cb) => cb (null, './cardsImages/'),
+//     filename: (req, file, cb) => {
+//          const cardName = req.body.CardName?.replace(/\s+/g, "_"); // remove spaces
+//          const ext = path.extname(file.originalname); // get file extension (.jpg, .png)
+//          const finalName = `${cardName}${ext}`;
+//          cb (null, finalName);
+//     }
+// });
+
+// Multer storage for Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "cards", // optional folder in your Cloudinary
+    format: "png",   // or 'jpg'
+    public_id: (req, file) => req.body.CardName.replace(/\s+/g, "_"),
+  },
+});
 
 const upload = multer({storage});
 
@@ -77,13 +99,14 @@ app.post('/upload', upload.single('CardImage'), async (req, res) => {
          .send("Missing required fields: CardName or CardImage");
      }
     const imageFilename = req.file.filename;
+    const imageUrl = req.file.path; // For Cloudinary, this is the URL
 
 try {
     const result = await db.query(
-      `INSERT INTO cards (cardname, quantity, cardtype, attribute, level, image_filename)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO cards (cardname, quantity, cardtype, attribute, level, image_filename,image_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *;`,
-      [cardName, quantityNum, cardType, attribute, levelNum, imageFilename]
+      [cardName, quantityNum, cardType, attribute, levelNum, imageFilename, imageUrl]
     );
     const savedCard = result.rows[0];
     res.status(200).json('Card uploaded successfully');
