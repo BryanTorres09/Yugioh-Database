@@ -8,12 +8,17 @@ import cors from 'cors';
 import { v2 as cloudinary } from "cloudinary";
 
 
-
+// ✅ Correct CORS configuration
+app.use(cors({
+  origin: "https://yugioh-database-app.onrender.com", // your frontend URL
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true
+}));
 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-app.use(cors());
+// app.use(cors());
 env.config();
 
 app.use(express.urlencoded({ extended: true }));
