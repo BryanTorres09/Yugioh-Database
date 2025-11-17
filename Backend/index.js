@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // ✅ Make the uploads folder public
-app.use("/cardsimg", express.static(path.join(process.cwd(), "cardsimages")));
+app.use("/cardsimg", express.static(path.join(process.cwd(), "cardsImages")));
 //app.use("./cardImages", express.static("cardsImages"));
 
 //Multer Storage Configuration
