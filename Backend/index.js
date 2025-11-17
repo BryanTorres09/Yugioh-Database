@@ -6,8 +6,8 @@ import env from 'dotenv';
 import path from 'path';
 import cors from 'cors';
 import { v2 as cloudinary } from "cloudinary";
-import pkg from "multer-storage-cloudinary";
-const { CloudinaryStorage } = pkg;
+
+
 
 
 
@@ -46,15 +46,17 @@ cloudinary.config({
 // });
 
 // Multer storage for Cloudinary
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: "cards", // optional folder in your Cloudinary
-    format: "png",   // or 'jpg'
-    public_id: (req, file) => req.body.CardName.replace(/\s+/g, "_"),
-  },
-});
+// const storage = new CloudinaryStorage({
+//   cloudinary,
+//   params: {
+//     folder: "cards", // optional folder in your Cloudinary
+//     format: "png",   // or 'jpg'
+//     public_id: (req, file) => req.body.CardName.replace(/\s+/g, "_"),
+//   },
+// });
 
+
+const storage = multer.memoryStorage();
 const upload = multer({storage});
 
 
@@ -86,37 +88,62 @@ app.get ('/', (req, res) => {
 
 // Upload Card Route
 app.post('/upload', upload.single('CardImage'), async (req, res) => {
-    const 
-    { CardName, Quantity, CardType, Attribute, Level,} = req.body;
+  const { CardName, Quantity, CardType, Attribute, Level } = req.body;
 
-    const cardName = CardName;
-    const cardType = CardType?.trim();
-    const quantityNum = parseInt(Quantity, 10);
-    const levelNum = parseInt(Level, 10);
-    const attribute = Attribute?.trim() || "";
+  const cardName = CardName;
+  const cardType = CardType?.trim();
+  const quantityNum = parseInt(Quantity, 10);
+  const levelNum = parseInt(Level, 10);
+  const attribute = Attribute?.trim() || "";
 
-     if (!CardName || !req.file) {
-       return res
-         .status(400)
-         .send("Missing required fields: CardName or CardImage");
-     }
-    const imageFilename = req.file.filename;
-    const imageUrl = req.file.path; // For Cloudinary, this is the URL
+  if (!CardName || !req.file) {
+    return res
+      .status(400)
+      .send("Missing required fields: CardName or CardImage");
+  }
 
-try {
+  // Upload buffer to Cloudinary
+  const cloudinaryUpload = () => {
+    return new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: "cards", public_id: CardName.replace(/\s+/g, "_") },
+        (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        }
+      );
+      stream.end(req.file.buffer);
+    });
+  };
+
+  const imageFilename = req.file.filename;
+  //const imageUrl = req.file.path; // For Cloudinary, this is the URL
+
+  try {
+
+const uploadResult = await cloudinaryUpload();
+const imageUrl = uploadResult.secure_url;
+
     const result = await db.query(
       `INSERT INTO cards (cardname, quantity, cardtype, attribute, level, image_filename,image_url)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *;`,
-      [cardName, quantityNum, cardType, attribute, levelNum, imageFilename, imageUrl]
+      [
+        cardName,
+        quantityNum,
+        cardType,
+        attribute,
+        levelNum,
+        imageFilename,
+        imageUrl,
+      ]
     );
     const savedCard = result.rows[0];
-    res.status(200).json('Card uploaded successfully');
-} catch (error) {
-    console.error('Error uploading card:', error);
-    res.status(500).json('Error uploading card');   
-}
-
+    res.status(200).json("Card uploaded successfully");
+  } catch (error) {
+    console.error("Error uploading card:", error);
+    res.status(500).json("Error uploading card");
+  }
 });
 
 // Get All Cards Route
