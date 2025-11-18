@@ -116,30 +116,26 @@ app.post(
         .status(400)
         .send("Missing required fields: CardName or CardImage");
     }
-try {
-    // Upload buffer to Cloudinary
-    const cloudinaryUpload = () => {
-      return new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "cards", public_id: CardName.replace(/\s+/g, "_") },
-          (err, result) => {
-            if (err) reject(err);
-            else resolve(result);
-          }
-        );
-        stream.end(req.file.buffer);
-      });
-    };
-    console.log("File received:", req.file);
-    console.log("Form data:", req.body);
-} catch (error) {
-    console.error("Error uploading to Cloudinary:", error);
-    return res.status(500).json("Error uploading card image");
-}
+
     const imageFilename = req.file.filename;
     //const imageUrl = req.file.path; // For Cloudinary, this is the URL
 
     try {
+      // Upload buffer to Cloudinary
+      const cloudinaryUpload = () => {
+        return new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: "cards", public_id: CardName.replace(/\s+/g, "_") },
+            (err, result) => {
+              if (err) reject(err);
+              else resolve(result);
+            }
+          );
+          stream.end(req.file.buffer);
+        });
+      };
+      console.log("File received:", req.file);
+      console.log("Form data:", req.body);
       const uploadResult = await cloudinaryUpload();
       const imageUrl = uploadResult.secure_url;
       console.log("Cloudinary result:", uploadResult);
