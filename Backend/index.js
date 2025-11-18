@@ -142,6 +142,7 @@ try {
     try {
       const uploadResult = await cloudinaryUpload();
       const imageUrl = uploadResult.secure_url;
+      console.log("Cloudinary result:", uploadResult);
 
       const result = await db.query(
         `INSERT INTO cards (cardname, quantity, cardtype, attribute, level, image_filename,image_url)
@@ -157,6 +158,7 @@ try {
           imageUrl,
         ]
       );
+      console.log("DB insert result:", result.rows[0]);
       const savedCard = result.rows[0];
       res.status(200).json("Card uploaded successfully");
     } catch (error) {
